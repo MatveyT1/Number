@@ -1,4 +1,3 @@
-from main import bot
 import json
 
 
@@ -16,18 +15,10 @@ def get_button(text, color):
 keyboard = {
     "one_time": False,
     "buttons": [
-        [get_button('Начать поиск', 'primary')],
-        [get_button('Вперёд', 'secondary')]
+        [get_button('Начать', 'primary')],
+        [get_button('Далее', 'secondary')]
     ]
 }
-
-
-def sender(user_id, text):
-    bot.vk.method('messages.send', {'user_id': user_id,
-                                    'message': text,
-                                    'random_id': 0,
-                                    'keyboard': keyboard})
-
 
 keyboard = json.dumps(keyboard, ensure_ascii=False).encode('utf-8')
 keyboard = str(keyboard.decode('utf-8'))

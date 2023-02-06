@@ -1,26 +1,72 @@
-from keyboard import sender
-from main import *
-from config import offset, line
+from main import bot, offset
+from database import creating_database, insert_data_seen_users, get_seen_user
 
-
-for event in bot.longpoll.listen():
-    if event.type == VkEventType.MESSAGE_NEW and event.to_me:
-        request = event.text.lower()
-        user_id = str(event.user_id)
-        msg = event.text.lower()
-        sender(user_id, msg.lower())
-        if request == 'начать поиск':
+if __name__ == '__main__':
+    while True:
+        msg, user_id = bot.get_event()
+        if msg == 'начать':
+            bot.greeting(user_id)
+            sex: int = 0
+            bot.write_msg(user_id, 'Введи пол (1 - женский, 2 - мужской)')
+            while True:
+                msg, user_id = bot.get_event()
+                try:
+                    if msg == '1' or msg == '2':
+                        sex: int = int(msg)
+                    else:
+                        raise ValueError
+                except ValueError:
+                    bot.write_msg(user_id, 'Введи корректный пол')
+                else:
+                    break
+            age_from: int = 0
+            bot.write_msg(user_id, 'Введи минимальный возраст')
+            while True:
+                msg, user_id = bot.get_event()
+                try:
+                    if int(msg) <= 0:
+                        raise ValueError
+                    else:
+                        age_from = int(msg)
+                except ValueError:
+                    bot.write_msg(user_id, 'Введи корректный возраст')
+                else:
+                    break
+            age_to: int = 0
+            bot.write_msg(user_id, 'Введи максимальный возраст')
+            while True:
+                msg, user_id = bot.get_event()
+                try:
+                    if int(msg) <= 0 or int(msg) < age_from:
+                        raise ValueError
+                    else:
+                        age_to = int(msg)
+                except ValueError:
+                    bot.write_msg(user_id, 'Введи корректный возраст')
+                else:
+                    break
+            bot.write_msg(user_id, 'Введи город')
+            msg, user_id = bot.get_event()
+            city: str = msg
             creating_database()
-            bot.write_msg(user_id, f'Привет, {bot.name(user_id)}')
-            bot.find_user(user_id)
-            bot.write_msg(event.user_id, f'Нашёл для тебя пару, жми на кнопку "Вперёд"')
-            bot.find_persons(user_id, offset)
-
-        elif request == 'вперёд':
-            for i in line:
+            bot.search_users(sex, age_from, age_to, city)
+            bot.start_searching(user_id, offset)
+            insert_data_seen_users(bot.person_id(offset))
+            bot.write_msg(user_id, 'Жми на кнопку "Далее", чтобы продолжить поиск.\n'
+                                      'Чтобы поставить лайк фото, напиши номер фото.\n'
+                                      'Чтобы закончить поиск, напиши "пока".')
+        elif msg == 'далее':
+            for i in range(0, 1000):
                 offset += 1
-                bot.find_persons(user_id, offset)
+                bot.start_searching(user_id, offset)
+                insert_data_seen_users(bot.person_id(offset))
+                bot.write_msg(user_id, 'Жми на кнопку "Далее", чтобы продолжить поиск.\n'
+                                      'Чтобы поставить лайк фото,напиши номер фото.\n'
+                                      'Чтобы закончить поиск, напиши "пока".')
                 break
-
+        elif msg == '1' or msg == '2' or msg == '3':
+            bot.like_photo(get_seen_user(), user_id, msg)
+        elif msg == 'пока':
+            bot.write_msg(user_id, "Пока((")
         else:
-            bot.write_msg(event.user_id, 'Твоё сообщение непонятно')
+            bot.greeting(user_id)
